@@ -26,6 +26,7 @@ ISTANBUL = ZoneInfo("Europe/Istanbul")
 from filo_konum import filo_konumlari, hat_konumlari
 from duyurular import duyurular
 from trafik_indeksi import trafik_gecmisi
+import github_log
 
 PROJE_KOKU = Path(__file__).resolve().parent.parent
 PROCESSED_KLASOR = PROJE_KOKU / "data" / "processed"
@@ -40,11 +41,15 @@ SISTEM_TALIMATI = (
     "MUTLAKA ilgili aracı çağır. Kullanıcıyı 'dashboard'a bak' gibi "
     "yönlendirmelerle geçiştirme -- sen zaten o veriye aracınla ulaşabiliyorsun.\n"
     "2. Aracın döndürdüğü rakamların DIŞINDA hiçbir sayı/istatistik uydurma.\n"
-    "3. SADECE İETT / İstanbul toplu taşıması / bu dashboard ile ilgili "
-    "sorulara cevap ver. Konuyla alakasız bir soru gelirse (genel sohbet, "
-    "başka bir konu, kod yazma isteği vb.) kibarca 'Ben sadece İETT "
-    "Operasyon Dashboard ile ilgili sorulara yardımcı olabilirim' de ve "
-    "başka hiçbir şey yazma -- hiçbir aracı çağırma, uzun açıklama yapma."
+    "3. Konu kapsamın geniş: İETT, İstanbul toplu taşıması, otobüsler, "
+    "trafik, hatlar, duraklar, ulaşım genel olarak -- bunlarla ilgili "
+    "sorulara (dashboard'daki canlı veriyle ilgili olsun ya da genel "
+    "bilgi sorusu olsun) seve seve cevap ver, kendi genel bilgini de "
+    "kullanabilirsin, sadece araçların döndürdüğü veriyle sınırlı değilsin. "
+    "Sadece TAMAMEN alakasız konularda (yemek tarifi, hava durumu, kod "
+    "yazma isteği, genel sohbet vb.) kibarca 'Ben sadece İETT/toplu "
+    "taşıma ile ilgili sorulara yardımcı olabilirim' de ve başka hiçbir "
+    "şey yazma."
 )
 
 TOOLS = [
@@ -246,26 +251,14 @@ def istemci():
     return anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 
 
-SOHBET_LOG_YOLU = PROCESSED_KLASOR / "sohbet_gecmisi.csv"
-
-
 def sohbeti_kaydet(mesaj, cevap):
     """
-    Her soru-cevabı bir CSV'ye ekliyor -- böylece dashboard'u paylaştığında
-    kimin ne sorduğunu görebiliyorsun (bkz. app/pages/8_Sohbet_Gecmisi.py,
-    şifreli).
-
-    NOT: Streamlit Cloud'un dosya sistemi KALICI DEĞİL -- uygulama yeniden
-    deploy edilirse (yeni bir push ile) bu dosya sıfırlanır. Kısa süreli
-    paylaşım/demo için yeterli, uzun vadeli arşiv için değil.
+    Her soru-cevabı private bir GitHub deposuna (iett-sohbet-loglari)
+    kaydediyor -- sitede hiçbir yerde görünmüyor, sadece GitHub
+    hesabından erişebiliyorsun.
     """
-    satir = pd.DataFrame([{
-        "zaman": datetime.now(ISTANBUL).strftime("%Y-%m-%d %H:%M:%S"),
-        "soru": mesaj,
-        "cevap": cevap,
-    }])
-    onceki = pd.read_csv(SOHBET_LOG_YOLU) if SOHBET_LOG_YOLU.exists() else pd.DataFrame()
-    pd.concat([onceki, satir], ignore_index=True).to_csv(SOHBET_LOG_YOLU, index=False)
+    zaman = datetime.now(ISTANBUL).strftime("%Y-%m-%d %H:%M:%S")
+    github_log.kaydet(zaman, mesaj, cevap)
 
 
 def soru_sor(mesaj):
