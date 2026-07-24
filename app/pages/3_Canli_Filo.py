@@ -20,12 +20,14 @@ PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
 from filo_konum import filo_konumlari, hat_konumlari  # noqa: E402
 from plana_uyum import kapino_hat_eslesmesi  # noqa: E402
+from tema import uygula as tema_uygula  # noqa: E402
 from datetime import datetime  # noqa: E402
 from zoneinfo import ZoneInfo  # noqa: E402
 
 ISTANBUL = ZoneInfo("Europe/Istanbul")
 
 st.set_page_config(page_title="Canlı Filo", layout="wide")
+tema_uygula()
 st.title("Canlı Filo — Anlık Araç Konumları")
 
 

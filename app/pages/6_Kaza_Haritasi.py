@@ -11,6 +11,7 @@ DİKKAT: Bu servis sadece kaza SAATİ ve KOORDİNATINI veriyor -- hangi
 hatta, hangi araçta olduğu bilgisi YOK (İETT'nin kendi dokümanında
 "Tur" alanı bile pratikte boş geliyor).
 """
+import sys
 from pathlib import Path
 
 import folium
@@ -20,9 +21,13 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(PROJE_KOKU / "src"))
+from tema import uygula as tema_uygula  # noqa: E402
+
 VERI_YOLU = PROJE_KOKU / "data" / "processed" / "kaza_islenmis.csv"
 
 st.set_page_config(page_title="Kaza Haritası", layout="wide")
+tema_uygula()
 st.title("Kaza Haritası")
 st.caption(
     "Bu servis sadece kaza saati + koordinat veriyor; hangi hat/araç olduğu bilgisi yok. "

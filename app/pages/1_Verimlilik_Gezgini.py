@@ -13,6 +13,7 @@ hat_tipi_ad     : HAT_UZUNLUGU + ortalama_sefer'e göre KMeans kümeleme,
 supheli_kod_eslesmesi : True ise BELBİM/İETT kod eşleşme sorunu var,
     bu hattın verimlilik tier'ine güvenilmemeli
 """
+import sys
 from pathlib import Path
 
 import folium
@@ -22,9 +23,13 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(PROJE_KOKU / "src"))
+from tema import uygula as tema_uygula  # noqa: E402
+
 VERI_YOLU = PROJE_KOKU / "data" / "processed" / "hat_segmentleri.csv"
 
 st.set_page_config(page_title="Verimlilik Gezgini", layout="wide")
+tema_uygula()
 st.title("Verimlilik Gezgini — Hat Bazlı Performans")
 
 if not VERI_YOLU.exists():

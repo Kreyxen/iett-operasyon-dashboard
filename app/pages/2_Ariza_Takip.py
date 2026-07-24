@@ -13,6 +13,7 @@ Sistem verisini güncellemek için:
     python src/cek_bozuk_satih.py
     python src/temizle_bozuk_satih.py
 """
+import sys
 from pathlib import Path
 
 import folium
@@ -22,6 +23,9 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(PROJE_KOKU / "src"))
+from tema import uygula as tema_uygula  # noqa: E402
+
 PROCESSED_KLASOR = PROJE_KOKU / "data" / "processed"
 SISTEM_YOLU = PROCESSED_KLASOR / "bozuk_satih_islenmis.csv"
 SENTETIK_YOLU = PROCESSED_KLASOR / "bozuk_satih_sentetik.csv"
@@ -34,6 +38,7 @@ KAYNAK_RENK = {
 }
 
 st.set_page_config(page_title="Arıza Takip", layout="wide")
+tema_uygula()
 st.title("Arıza Takip — Bozuk Satıh Bildirimleri")
 
 

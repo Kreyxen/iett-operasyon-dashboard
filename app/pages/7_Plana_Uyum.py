@@ -18,11 +18,13 @@ import streamlit as st
 PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
 from plana_uyum import gorevleri_cek, gecikme_hesapla  # noqa: E402
+from tema import uygula as tema_uygula  # noqa: E402
 
 ISTANBUL = ZoneInfo("Europe/Istanbul")
 bugun_istanbul = datetime.now(ISTANBUL).date()
 
 st.set_page_config(page_title="Plana Uyum", layout="wide")
+tema_uygula()
 st.title("Plana Uyum — Hat Bazlı Sefer Gecikmeleri")
 st.caption(
     "Planlanan vs gerçekleşen sefer başlangıç zamanı farkından hesaplanır. "

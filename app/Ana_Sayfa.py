@@ -19,8 +19,10 @@ sys.path.insert(0, str(PROJE_KOKU / "src"))
 from filo_konum import filo_konumlari  # noqa: E402
 from duyurular import duyurular  # noqa: E402
 from asistan import soru_sor  # noqa: E402
+from tema import uygula as tema_uygula  # noqa: E402
 
 st.set_page_config(page_title="İETT Operasyon Dashboard", layout="wide")
+tema_uygula()
 st.title("İETT Operasyon Dashboard")
 st.caption("Staj projesi — her modülden güncel bir özet. Detaylar için soldaki menüyü kullan.")
 

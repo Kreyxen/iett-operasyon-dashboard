@@ -16,8 +16,10 @@ PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
 from saatlik_yogunluk import veri_yukle  # noqa: E402
 from trafik_indeksi import trafik_gecmisi  # noqa: E402
+from tema import uygula as tema_uygula  # noqa: E402
 
 st.set_page_config(page_title="Saatlik Yoğunluk", layout="wide")
+tema_uygula()
 st.title("Saatlik Yoğunluk — BELBİM Yolcu Verisi (Haziran 2024)")
 
 

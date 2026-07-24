@@ -13,8 +13,10 @@ import streamlit as st
 PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
 import github_log  # noqa: E402
+from tema import uygula as tema_uygula  # noqa: E402
 
 st.set_page_config(page_title="Sohbet Geçmişi", layout="wide")
+tema_uygula()
 st.title("🔒 Sohbet Geçmişi (Admin)")
 
 sifre = st.text_input("Şifre", type="password")
