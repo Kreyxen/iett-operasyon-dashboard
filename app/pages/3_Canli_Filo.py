@@ -19,6 +19,7 @@ from streamlit_folium import st_folium
 PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
 from filo_konum import filo_konumlari, hat_konumlari  # noqa: E402
+from plana_uyum import kapino_hat_eslesmesi  # noqa: E402
 from datetime import datetime  # noqa: E402
 from zoneinfo import ZoneInfo  # noqa: E402
 
@@ -61,6 +62,14 @@ def veriyi_getir():
     return df
 
 
+@st.cache_data(ttl=3600)
+def hat_eslesmesi_getir():
+    try:
+        return kapino_hat_eslesmesi()
+    except Exception:
+        return {}
+
+
 col_baslik, col_buton = st.columns([4, 1])
 with col_buton:
     if st.button("Yenile"):
@@ -71,6 +80,12 @@ try:
 except Exception as e:
     st.error(f"Servisten veri alınamadı: {e}")
     st.stop()
+
+# Kapı No -> Hat Kodu eşleşmesi (GetIettArsivGorev_json'dan, bugünün
+# görevlerinden türetilmiş). Eşleşme yoksa "?" gösteriyoruz -- bu ya
+# aracın bugün görev almadığı ya da eşleşmenin bulunamadığı anlamına gelir.
+hat_eslesmesi = hat_eslesmesi_getir()
+df["HatKodu"] = df["KapiNo"].map(hat_eslesmesi).fillna("?")
 
 toplam_arac = len(df)
 esik_dk = st.slider(
@@ -181,7 +196,7 @@ harita = folium.Map(location=merkez, zoom_start=zoom, tiles="cartodbpositron")
 # Python tarafında tek tek nesne oluşturmuyor -- ham veriyi doğrudan
 # tarayıcıya (JavaScript'e) gönderip işaretleri orada oluşturuyor. Renk/
 # popup mantığı bu yüzden JS kodu olarak yazılıyor, Python'da değil.
-veri = df[["Enlem", "Boylam", "Plaka", "KapiNo", "Hiz", "Operator"]].fillna("").values.tolist()
+veri = df[["Enlem", "Boylam", "Plaka", "KapiNo", "Hiz", "Operator", "HatKodu"]].fillna("").values.tolist()
 
 js_callback = """
 function (row) {
@@ -191,6 +206,7 @@ function (row) {
         radius: 5, color: renk, fillColor: renk, fillOpacity: 0.85, weight: 1
     });
     marker.bindPopup(
+        'Hat: ' + row[6] + '<br>' +
         'Plaka: ' + row[2] + '<br>' +
         'Kapı No: ' + row[3] + '<br>' +
         'Hız: ' + row[4] + ' km/h<br>' +
@@ -203,6 +219,7 @@ function (row) {
 FastMarkerCluster(data=veri, callback=js_callback).add_to(harita)
 
 if secili_konum is not None:
+    secili_hat = hat_eslesmesi.get(secili_konum[3], "?")
     folium.CircleMarker(
         location=merkez,
         radius=11,
@@ -210,7 +227,7 @@ if secili_konum is not None:
         fill=True,
         fill_color="#3987e5",
         fill_opacity=1.0,
-        popup=f"Plaka: {secili_konum[2]}<br>Kapı No: {secili_konum[3]}",
+        popup=f"Hat: {secili_hat}<br>Plaka: {secili_konum[2]}<br>Kapı No: {secili_konum[3]}",
     ).add_to(harita)
 
 st.caption("🔴 <5 km/h (duruyor) · 🟡 5-25 km/h · 🟢 >25 km/h")
