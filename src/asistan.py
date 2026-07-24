@@ -246,6 +246,28 @@ def istemci():
     return anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 
 
+SOHBET_LOG_YOLU = PROCESSED_KLASOR / "sohbet_gecmisi.csv"
+
+
+def sohbeti_kaydet(mesaj, cevap):
+    """
+    Her soru-cevabı bir CSV'ye ekliyor -- böylece dashboard'u paylaştığında
+    kimin ne sorduğunu görebiliyorsun (bkz. app/pages/8_Sohbet_Gecmisi.py,
+    şifreli).
+
+    NOT: Streamlit Cloud'un dosya sistemi KALICI DEĞİL -- uygulama yeniden
+    deploy edilirse (yeni bir push ile) bu dosya sıfırlanır. Kısa süreli
+    paylaşım/demo için yeterli, uzun vadeli arşiv için değil.
+    """
+    satir = pd.DataFrame([{
+        "zaman": datetime.now(ISTANBUL).strftime("%Y-%m-%d %H:%M:%S"),
+        "soru": mesaj,
+        "cevap": cevap,
+    }])
+    onceki = pd.read_csv(SOHBET_LOG_YOLU) if SOHBET_LOG_YOLU.exists() else pd.DataFrame()
+    pd.concat([onceki, satir], ignore_index=True).to_csv(SOHBET_LOG_YOLU, index=False)
+
+
 def soru_sor(mesaj):
     """Tek bir kullanıcı mesajını Claude'a gönderir, gerekirse araçları çalıştırır, cevap metnini döndürür."""
     client = istemci()
@@ -262,7 +284,12 @@ def soru_sor(mesaj):
 
         if response.stop_reason != "tool_use":
             # Model normal bir metin cevabı verdi, döngü bitti.
-            return "".join(blok.text for blok in response.content if blok.type == "text")
+            cevap = "".join(blok.text for blok in response.content if blok.type == "text")
+            try:
+                sohbeti_kaydet(mesaj, cevap)
+            except Exception:
+                pass  # kayıt başarısız olsa bile kullanıcı cevabı almaya devam etsin
+            return cevap
 
         # Model bir/birden fazla araç çağırmak istiyor -- hepsini çalıştırıp
         # sonuçları "tool_result" olarak modele geri gönderiyoruz.

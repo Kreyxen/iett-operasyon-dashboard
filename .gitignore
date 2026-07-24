@@ -9,3 +9,6 @@ __pycache__/
 data/raw/gtfs_stop_times.csv
 data/raw/gtfs_trips.csv
 data/raw/gtfs_routes.csv
+
+# AI asistan sohbet kaydı -- kişisel/dinamik veri, git'e gitmesin
+data/processed/sohbet_gecmisi.csv

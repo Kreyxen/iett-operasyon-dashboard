@@ -87,15 +87,23 @@ HAZIR_SORULAR = [
     "Şu an kaç otobüs var, kaçı hareket halinde?",
     "Aktif duyuru var mı?",
     "Kaç tane arıza bildirimi var?",
+    "Şu an trafik nasıl?",
+    "Son 14 günde kaç kaza olmuş?",
+    "10A hattının verimlilik durumu nedir?",
+    "14ŞB hattında kaç araç var?",
+    "34 HO 1000 plakalı aracı bul",
 ]
 
 st.caption("Hazır sorular:")
 hazir_secim = None
-buton_kolonlari = st.columns(len(HAZIR_SORULAR))
-for kolon, soru in zip(buton_kolonlari, HAZIR_SORULAR):
-    with kolon:
-        if st.button(soru, use_container_width=True):
-            hazir_secim = soru
+SUTUN_SAYISI = 3
+for baslangic in range(0, len(HAZIR_SORULAR), SUTUN_SAYISI):
+    satir_sorulari = HAZIR_SORULAR[baslangic:baslangic + SUTUN_SAYISI]
+    buton_kolonlari = st.columns(SUTUN_SAYISI)
+    for kolon, soru in zip(buton_kolonlari, satir_sorulari):
+        with kolon:
+            if st.button(soru, use_container_width=True):
+                hazir_secim = soru
 
 for mesaj in st.session_state["sohbet_gecmisi"]:
     with st.chat_message(mesaj["rol"]):
