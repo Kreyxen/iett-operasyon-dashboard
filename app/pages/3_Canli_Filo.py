@@ -45,6 +45,7 @@ def veriyi_getir():
     # Türkiye saatiyle aynıydı ama bulutta (Streamlit Cloud) genelde UTC'dir.
     # İETT'nin verdiği saat Türkiye saati olduğu için, biz de açıkça İstanbul
     # saatini kullanıyoruz (tzinfo'yu at, çünkü aday naive bir datetime).
+    #.
     simdi = datetime.now(ISTANBUL).replace(tzinfo=None)
 
     def dakika_once(saat_str):
