@@ -1,0 +1,11 @@
+.streamlit/secrets.toml
+venv/
+__pycache__/
+*.pyc
+
+# Kullanılmayan/deneme amaçlı büyük dosyalar (planlanan varış saati denemesi
+# için indirilmişti, veri kalitesi sorunu (Excel satır limiti) bulunup
+# vazgeçilmişti -- kod hiçbir yerde bu dosyaları okumuyor)
+data/raw/gtfs_stop_times.csv
+data/raw/gtfs_trips.csv
+data/raw/gtfs_routes.csv
