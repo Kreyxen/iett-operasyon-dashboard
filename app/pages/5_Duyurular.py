@@ -11,6 +11,9 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+ISTANBUL = ZoneInfo("Europe/Istanbul")
 
 PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
@@ -63,7 +66,7 @@ st.metric("Gösterilen duyuru", len(df_f))
 # 23:25'i, bugünün 07:39'undan büyük görünür ama aslında daha eski).
 # Bu yüzden: saat şu andan BÜYÜKSE bu "gelecekte" demek, imkansız --
 # o zaman dünden kalma olmalı, bir gün geriye alıyoruz.
-simdi = datetime.now()
+simdi = datetime.now(ISTANBUL).replace(tzinfo=None)  # sunucu saat dilimi UTC olabilir, biz İETT gibi İstanbul saatini kullanıyoruz
 
 
 def zamani_coz(saat_metni):

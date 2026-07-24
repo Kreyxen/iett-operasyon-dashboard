@@ -7,9 +7,12 @@ sayfa sadece çağırıp (kısa süreli önbellekle) gösteriyor.
 import sys
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import streamlit as st
+
+ISTANBUL = ZoneInfo("Europe/Istanbul")
 
 PROJE_KOKU = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
@@ -118,4 +121,4 @@ if kullanici_mesaji:
 
 st.divider()
 
-st.caption(f"Son güncelleme: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}")
+st.caption(f"Son güncelleme: {datetime.now(ISTANBUL).strftime('%d.%m.%Y %H:%M:%S')}")

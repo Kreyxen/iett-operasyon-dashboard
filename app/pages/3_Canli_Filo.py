@@ -20,6 +20,9 @@ PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
 from filo_konum import filo_konumlari, hat_konumlari  # noqa: E402
 from datetime import datetime  # noqa: E402
+from zoneinfo import ZoneInfo  # noqa: E402
+
+ISTANBUL = ZoneInfo("Europe/Istanbul")
 
 st.set_page_config(page_title="Canlı Filo", layout="wide")
 st.title("Canlı Filo — Anlık Araç Konumları")
@@ -38,7 +41,11 @@ def veriyi_getir():
     # Bazı araçlar (garajda/GPS kapalı) saatler önceki son konumunda donmuş
     # olabilir. Gece yarısı sınırını da hesaba katarak (23:58 ile 00:02 arası
     # aslında sadece 4 dakika) "kaç dakika önce" hesaplıyoruz.
-    simdi = datetime.now()
+    # ÖNEMLİ: datetime.now() SUNUCUNUN kendi saat dilimini kullanır -- bu yerelde
+    # Türkiye saatiyle aynıydı ama bulutta (Streamlit Cloud) genelde UTC'dir.
+    # İETT'nin verdiği saat Türkiye saati olduğu için, biz de açıkça İstanbul
+    # saatini kullanıyoruz (tzinfo'yu at, çünkü aday naive bir datetime).
+    simdi = datetime.now(ISTANBUL).replace(tzinfo=None)
 
     def dakika_once(saat_str):
         try:

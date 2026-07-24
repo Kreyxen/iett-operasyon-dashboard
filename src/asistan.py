@@ -15,10 +15,13 @@ istek değil, çok adımlı bir döngü var (asagidaki while).
 """
 from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import anthropic
 import pandas as pd
 import streamlit as st
+
+ISTANBUL = ZoneInfo("Europe/Istanbul")
 
 from filo_konum import filo_konumlari, hat_konumlari
 from duyurular import duyurular
@@ -124,7 +127,7 @@ def aktif_duyurulari_getir():
     if not kayitlar:
         return "Şu an aktif duyuru yok."
 
-    simdi = datetime.now()
+    simdi = datetime.now(ISTANBUL).replace(tzinfo=None)
 
     def zamani_coz(k):
         eslesme = pd.Series([k.get("GUNCELLEME_SAATI", "")]).str.extract(r"(\d{2}:\d{2})")[0][0]
