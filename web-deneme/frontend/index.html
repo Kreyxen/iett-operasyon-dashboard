@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<script>
+  document.documentElement.setAttribute("data-theme", localStorage.getItem("iett-tema") || "dark");
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>İETT Operasyon Merkezi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="govde">
+
+<nav class="yan-nav">
+  <div class="marka">
+    <div class="marka-ikon">🚌</div>
+    <div>
+      <h1>İETT</h1>
+      <span class="marka-alt">Operasyon Merkezi</span>
+    </div>
+  </div>
+
+  <span class="nav-etiket">MODÜLLER</span>
+  <button class="nav-btn aktif" data-section="genel"><span class="nav-ikon">🗂️</span>Genel Bakış<span class="nav-nokta"></span></button>
+  <button class="nav-btn" data-section="verimlilik"><span class="nav-ikon">📈</span>Verimlilik Gezgini</button>
+  <button class="nav-btn" data-section="ariza"><span class="nav-ikon">🛠️</span>Arıza Takip</button>
+  <button class="nav-btn" data-section="filo"><span class="nav-ikon">🚍</span>Canlı Filo</button>
+  <button class="nav-btn" data-section="yogunluk"><span class="nav-ikon">🕒</span>Saatlik Yoğunluk</button>
+  <button class="nav-btn" data-section="duyurular"><span class="nav-ikon">📢</span>Duyurular</button>
+  <button class="nav-btn" data-section="kaza"><span class="nav-ikon">📍</span>Kaza Haritası</button>
+  <button class="nav-btn" data-section="planauyum"><span class="nav-ikon">⏱️</span>Plana Uyum</button>
+</nav>
+
+<div class="icerik-sutunu">
+
+<header class="ust-bar">
+  <div class="arama-kutusu">
+    <span>🔍</span>
+    <input type="text" id="genel-arama" placeholder="Hat kodu, plaka veya kapı no ara… (Enter'a bas)" />
+  </div>
+  <div class="ust-bar-sag">
+    <span class="canli-pill" id="canli-pill"><i id="canli-pill-nokta"></i><span id="canli-pill-metin">Bağlanıyor…</span></span>
+    <span class="zil" title="Aktif duyuru sayısı">🔔<span class="zil-rozet" id="zil-rozet">0</span></span>
+    <button type="button" id="tema-buton" title="Aydınlık/Karanlık mod">🌙</button>
+    <span class="saat" id="guncelleme-saati">--:--:--</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- GENEL BAKIŞ -->
+  <section class="sayfa aktif" id="sayfa-genel">
+    <div class="sayfa-ust">
+      <div>
+        <h2 class="sayfa-baslik">Genel Bakış</h2>
+        <p class="aciklama">İETT filosunun anlık operasyonel durumu, tek ekranda.</p>
+      </div>
+      <span class="canli-rozet">🟢 Canlı</span>
+    </div>
+    <div class="kpi-grid">
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Canlı Araç</span><span class="kpi-ikon" style="background:#3987e522;color:#3987e5;">🚍</span></div>
+        <span class="kpi-deger" id="kpi-arac">—</span>
+        <span class="kpi-alt">son 15 dk içinde sinyal veren</span>
+      </div>
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Ortalama Hız</span><span class="kpi-ikon" style="background:#199e7022;color:#199e70;">⚡</span></div>
+        <span class="kpi-deger" id="kpi-hiz">—</span>
+        <span class="kpi-alt">filo geneli, anlık</span>
+      </div>
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Aktif Duyuru</span><span class="kpi-ikon" style="background:#d9592622;color:#d95926;">📢</span></div>
+        <span class="kpi-deger" id="kpi-duyuru">—</span>
+        <span class="kpi-alt">sefer iptali + güzergah</span>
+      </div>
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Trafik İndeksi</span><span class="kpi-ikon" style="background:#c9850022;color:#c98500;">🚦</span></div>
+        <span class="kpi-deger" id="kpi-trafik">—</span>
+        <span class="kpi-alt">son saatlik ölçüm, 0-99</span>
+      </div>
+    </div>
+    <div class="grafik-grid">
+      <div class="kart">
+        <div class="kart-baslik"><h2>Saatlik Yolcu Yoğunluğu</h2><span class="mini-rozet">Haziran 2024</span></div>
+        <canvas id="yogunluk-grafik-genel"></canvas>
+      </div>
+      <div class="kart">
+        <div class="kart-baslik"><h2>Trafik İndeksi (Son 3 Gün)</h2><span class="mini-rozet">Canlı</span></div>
+        <canvas id="trafik-grafik-genel"></canvas>
+      </div>
+    </div>
+
+    <div class="kart" style="margin-top:16px;">
+      <div class="kart-baslik"><h2>🤖 AI Asistan</h2><span class="mini-rozet">Claude · canlı veriye erişimi var</span></div>
+      <div class="ana-sohbet">
+        <div class="hazir-sorular" id="hazir-sorular-genel"></div>
+        <div id="ana-sohbet-mesajlar" class="ana-sohbet-mesajlar"></div>
+        <form id="ana-sohbet-form" class="ana-sohbet-form">
+          <input type="text" id="ana-sohbet-girdi" placeholder="Bir şey sor…" autocomplete="off" />
+          <button type="submit">Gönder</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- VERİMLİLİK -->
+  <section class="sayfa" id="sayfa-verimlilik">
+    <div class="sayfa-ust">
+      <div>
+        <h2 class="sayfa-baslik">Verimlilik Gezgini</h2>
+        <p class="aciklama">Verimlilik = yolcu / km oranı. Haziran ve Aralık 2024 verileriyle 0.960 korelasyonla doğrulanmış bir metrik.</p>
+      </div>
+      <span class="canli-rozet canli-rozet-notr">📊 İşlenmiş Veri</span>
+    </div>
+    <div class="kpi-grid kpi-grid-2">
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Analiz Edilen Hat</span><span class="kpi-ikon" style="background:#3987e522;color:#3987e5;">🛣️</span></div>
+        <span class="kpi-deger" id="kpi-hat-sayisi">—</span>
+      </div>
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Üst Çeyrek (En Verimli)</span><span class="kpi-ikon" style="background:#199e7022;color:#199e70;">🏆</span></div>
+        <span class="kpi-deger" id="kpi-ust-ceyrek">—</span>
+      </div>
+    </div>
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik"><h2>Filtreler</h2></div>
+      <div class="filtre-govde">
+        <div>
+          <span class="filtre-etiket">Verimlilik Tier</span>
+          <div class="cip-grup" id="tier-filtre"></div>
+        </div>
+        <div>
+          <span class="filtre-etiket">Hat Tipi</span>
+          <div class="cip-grup" id="tip-filtre"></div>
+        </div>
+        <label class="checkbox-satir"><input type="checkbox" id="supheli-checkbox" checked /> Şüpheli kod eşleşmelerini gizle</label>
+        <span class="filtre-sonuc" id="verimlilik-gosterilen">— hat gösteriliyor</span>
+      </div>
+    </div>
+
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik"><h2>Hat Uzunluğu vs. Verimlilik Oranı</h2></div>
+      <canvas id="verimlilik-scatter"></canvas>
+    </div>
+
+    <div class="grafik-grid" style="margin-bottom:16px;">
+      <div class="kart">
+        <div class="kart-baslik"><h2>Tier'e Göre Hat Dağılımı</h2></div>
+        <canvas id="verimlilik-tier-bar"></canvas>
+      </div>
+      <div class="kart">
+        <div class="kart-baslik"><h2>Hat Tipine Göre Oran Aralığı</h2><span class="mini-rozet">min–maks</span></div>
+        <canvas id="verimlilik-tip-aralik"></canvas>
+      </div>
+    </div>
+
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik">
+        <h2>Hat Listesi</h2>
+        <input type="text" id="verimlilik-arama" placeholder="Hat kodu / adı ara…" class="mini-input" />
+      </div>
+      <p class="tablo-not">
+        <b>Yolcu/km</b>: bu hattın ortalama yolcu sayısının hat uzunluğuna bölünmesi (verimlilik metriği)
+      </p>
+      <div class="tablo-sarmalayici"><table id="verimlilik-tablo"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="kart">
+      <div class="kart-baslik"><h2>Güzergah Haritası</h2></div>
+      <div class="guzergah-govde">
+        <div class="guzergah-panel">
+          <label class="filtre-etiket">Hat seç</label>
+          <select id="guzergah-hat-secim" class="mini-input" style="width:100%;margin-bottom:10px;"></select>
+          <div class="cip-grup" id="guzergah-yon-secim" style="margin-bottom:10px;"></div>
+          <div id="guzergah-kesisim-uyari"></div>
+          <p class="aciklama" id="guzergah-ozet" style="margin-bottom:8px;"></p>
+          <div id="guzergah-durak-liste" class="guzergah-durak-liste"></div>
+        </div>
+        <div id="guzergah-harita" class="guzergah-harita"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARIZA TAKİP -->
+  <section class="sayfa" id="sayfa-ariza">
+    <div class="sayfa-ust">
+      <div>
+        <h2 class="sayfa-baslik">Arıza Takip</h2>
+        <p class="aciklama">🔴 Sistem (İETT) · ⚫ Sentetik (Demo) · 🔵 Manuel Bildirim — bozuk satıh (yol bozukluğu) bildirimleri</p>
+      </div>
+      <span class="canli-rozet canli-rozet-notr">🗂️ Karma Kaynak</span>
+    </div>
+    <div class="kpi-grid kpi-grid-2">
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Toplam Bildirim</span><span class="kpi-ikon" style="background:#e3494822;color:#e34948;">⚠️</span></div>
+        <span class="kpi-deger" id="kpi-ariza-toplam">—</span>
+      </div>
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Sıcak Bölge (Küme)</span><span class="kpi-ikon" style="background:#c9850022;color:#c98500;">🔥</span></div>
+        <span class="kpi-deger" id="kpi-ariza-kume">—</span>
+      </div>
+    </div>
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="filtre-govde">
+        <div>
+          <span class="filtre-etiket">Kaynak</span>
+          <div class="cip-grup" id="ariza-kaynak-filtre"></div>
+        </div>
+        <div class="cip-grup" id="ariza-gorunum-secim">
+          <button type="button" class="cip aktif" data-gorunum="nokta">Tıklanabilir Noktalar</button>
+          <button type="button" class="cip" data-gorunum="isi">Isı Haritası</button>
+        </div>
+      </div>
+    </div>
+    <div class="kart"><div id="ariza-harita" class="tam-harita"></div></div>
+
+    <div class="kart" style="margin-top:16px;">
+      <div class="kart-baslik"><h2>➕ Yeni Bildirim Ekle (Manuel)</h2></div>
+      <div class="manuel-form-govde">
+        <p class="tablo-not" style="border:none;padding:0 0 10px;">1) Haritada arızanın olduğu yere tıkla, 2) detayları gir, 3) kaydet. Bu kayıtlar "Manuel Bildirim" olarak etiketlenir, İETT sisteminden gelmez.</p>
+        <div id="ariza-secim-harita" class="secim-harita"></div>
+        <p id="ariza-secili-konum" class="aciklama" style="margin:10px 0;">Henüz konum seçilmedi.</p>
+        <form id="manuel-ariza-form" class="manuel-form">
+          <input type="text" id="manuel-kapino" placeholder="Kapı No (biliyorsan)" />
+          <input type="text" id="manuel-sicil" placeholder="Şoför Sicil (biliyorsan)" />
+          <textarea id="manuel-mesaj" placeholder="Mesaj (örn. 'Bu alanda satıh bozuk')" rows="2"></textarea>
+          <button type="submit">Bildirimi Kaydet</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- CANLI FİLO -->
+  <section class="sayfa" id="sayfa-filo">
+    <div class="sayfa-ust">
+      <div>
+        <h2 class="sayfa-baslik">Canlı Filo</h2>
+        <p class="aciklama">Filodaki tüm operatörlerin anlık araç konumları.</p>
+      </div>
+      <span class="canli-rozet">🟢 Canlı</span>
+    </div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Gösterilen Araç</span><span class="kpi-ikon" style="background:#3987e522;color:#3987e5;">🚍</span></div>
+        <span class="kpi-deger" id="kpi-filo-sayisi">—</span>
+      </div>
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Duruyor (&lt;5 km/h)</span><span class="kpi-ikon" style="background:#e3494822;color:#e34948;">🛑</span></div>
+        <span class="kpi-deger" id="kpi-filo-duruyor">—</span>
+      </div>
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Hareket Halinde</span><span class="kpi-ikon" style="background:#199e7022;color:#199e70;">🟢</span></div>
+        <span class="kpi-deger" id="kpi-filo-hareket">—</span>
+      </div>
+    </div>
+
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="filtre-govde">
+        <div style="min-width:260px;">
+          <span class="filtre-etiket">Kaç dakikaya kadar "güncel" sayılsın? <b id="esik-dk-deger">15</b> dk</span>
+          <input type="range" id="esik-dk-slider" min="5" max="60" step="5" value="15" style="width:100%;" />
+        </div>
+        <div>
+          <span class="filtre-etiket">Operatör</span>
+          <div class="cip-grup" id="operator-filtre"></div>
+        </div>
+        <div>
+          <span class="filtre-etiket">Garajlar</span>
+          <div class="cip-grup">
+            <button type="button" class="cip" id="garaj-toggle">🏠 Garajları Göster</button>
+          </div>
+        </div>
+      </div>
+      <div class="filtre-govde" style="border-top:1px solid var(--border);">
+        <div style="flex:1;min-width:220px;">
+          <span class="filtre-etiket">Hat kodu ara (örn. 34, 522ST)</span>
+          <input type="text" id="filo-hat-arama" class="mini-input" style="width:100%;" placeholder="Hat kodu…" />
+          <div id="filo-hat-sonuc" class="arama-sonuc-liste"></div>
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <span class="filtre-etiket">Plaka veya kapı no ara</span>
+          <input type="text" id="filo-plaka-arama" class="mini-input" style="width:100%;" placeholder="Plaka / kapı no…" />
+          <div id="filo-plaka-sonuc" class="arama-sonuc-liste"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik">
+        <h2>Harita</h2>
+        <span class="lejant">
+          <i style="background:#e34948"></i>&lt;5 km/h
+          <i style="background:#eda100"></i>5-25
+          <i style="background:#1baf7a"></i>&gt;25
+        </span>
+      </div>
+      <div id="filo-harita" class="tam-harita"></div>
+    </div>
+
+    <div class="kart">
+      <div class="kart-baslik"><h2>Operatör Özeti</h2></div>
+      <div class="tablo-sarmalayici"><table id="operator-ozet-tablo"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- SAATLİK YOĞUNLUK -->
+  <section class="sayfa" id="sayfa-yogunluk">
+    <div class="sayfa-ust">
+      <div>
+        <h2 class="sayfa-baslik">Saatlik Yoğunluk</h2>
+        <p class="aciklama">BELBİM turnike verisi — Haziran 2024, hafta içi vs hafta sonu.</p>
+      </div>
+      <span class="canli-rozet canli-rozet-notr">📊 Arşiv Veri</span>
+    </div>
+
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik"><h2>Filtreler</h2></div>
+      <div class="filtre-govde">
+        <div style="flex:1;min-width:260px;">
+          <span class="filtre-etiket">İlçe</span>
+          <div class="cip-grup" id="yogunluk-ilce-filtre"></div>
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <span class="filtre-etiket">Hat adı ara (opsiyonel)</span>
+          <input type="text" id="yogunluk-hat-arama" class="mini-input" style="width:100%;" placeholder="Boş bırakırsan tüm hatlar" />
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid kpi-grid-2">
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Toplam Yolculuk (Filtrelenmiş)</span><span class="kpi-ikon" style="background:#3987e522;color:#3987e5;">🧍</span></div>
+        <span class="kpi-deger" id="kpi-yogunluk-toplam">—</span>
+      </div>
+    </div>
+
+    <div class="kart" style="margin-bottom:16px;"><canvas id="yogunluk-grafik"></canvas></div>
+
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik"><h2>Isı Haritası — Gün x Saat</h2></div>
+      <canvas id="yogunluk-isi-grafik"></canvas>
+    </div>
+
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik"><h2>İlçe Bazlı Toplam Yolcu</h2></div>
+      <div class="tablo-sarmalayici"><table id="yogunluk-ilce-tablo"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik">
+        <h2>Günün En Çok Yolculuk Yapan Hatları</h2>
+        <span class="mini-rozet">Canlı · GetIettYolculukHat_json</span>
+      </div>
+      <div class="filtre-govde">
+        <div>
+          <span class="filtre-etiket">Hangi günün verisine bakalım?</span>
+          <input type="date" id="gunluk-yolculuk-tarih" class="mini-input" />
+        </div>
+      </div>
+      <p class="tablo-not" style="border:none;">
+        Yukarıdaki BELBİM verisinden farklı bir kaynak -- istediğin güne canlı sorgu atıp o günün gerçek
+        yolcu sayılarını çeker (en çok yolculuk yapan 50 hat). Bugünün verisi gün bitmeden genelde eksik
+        gelir, o yüzden varsayılan dün.
+      </p>
+      <canvas id="gunluk-yolculuk-grafik"></canvas>
+    </div>
+  </section>
+
+  <!-- DUYURULAR -->
+  <section class="sayfa" id="sayfa-duyurular">
+    <div class="sayfa-ust">
+      <div>
+        <h2 class="sayfa-baslik">Duyurular</h2>
+        <p class="aciklama">Hat bazlı sefer iptali ve güzergah değişikliği duyuruları.</p>
+      </div>
+      <span class="canli-rozet">🟢 Canlı</span>
+    </div>
+    <div class="kpi-grid kpi-grid-2">
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Gösterilen Duyuru</span><span class="kpi-ikon" style="background:#d9592622;color:#d95926;">📢</span></div>
+        <span class="kpi-deger" id="kpi-duyuru-sayfa">—</span>
+      </div>
+    </div>
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="filtre-govde">
+        <div>
+          <span class="filtre-etiket">Duyuru Tipi</span>
+          <div class="cip-grup" id="duyuru-tip-filtre"></div>
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <span class="filtre-etiket">Hat kodu veya adı ara</span>
+          <input type="text" id="duyuru-hat-arama" class="mini-input" style="width:100%;" />
+        </div>
+        <button type="button" id="duyuru-yenile-buton" class="cip" style="align-self:flex-end;">🔄 Yenile</button>
+      </div>
+    </div>
+    <div class="kart">
+      <div id="duyuru-liste" class="duyuru-liste duyuru-liste-genis">
+        <p class="yukleniyor">Yükleniyor…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- KAZA HARİTASI -->
+  <section class="sayfa" id="sayfa-kaza">
+    <div class="sayfa-ust">
+      <div>
+        <h2 class="sayfa-baslik">Kaza Haritası</h2>
+        <p class="aciklama">Servis sadece kaza saati + koordinat veriyor; hangi hat/araç olduğu bilgisi yok. Son 14 gün.</p>
+      </div>
+      <span class="canli-rozet canli-rozet-notr">📅 Son 14 Gün</span>
+    </div>
+    <div class="kpi-grid kpi-grid-2">
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Toplam Kaza Kaydı</span><span class="kpi-ikon" style="background:#e3494822;color:#e34948;">🚨</span></div>
+        <span class="kpi-deger" id="kpi-kaza-toplam">—</span>
+      </div>
+    </div>
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="cip-grup" id="kaza-gorunum-secim">
+        <button type="button" class="cip aktif" data-gorunum="nokta">Tıklanabilir Noktalar</button>
+        <button type="button" class="cip" data-gorunum="isi">Isı Haritası</button>
+      </div>
+    </div>
+    <div class="kart"><div id="kaza-harita" class="tam-harita"></div></div>
+  </section>
+
+  <!-- PLANA UYUM -->
+  <section class="sayfa" id="sayfa-planauyum">
+    <div class="sayfa-ust">
+      <div>
+        <h2 class="sayfa-baslik">Plana Uyum</h2>
+        <p class="aciklama">Planlanan vs gerçekleşen sefer başlangıç zamanı farkından hesaplanır (dünün verisi).</p>
+      </div>
+      <span class="canli-rozet canli-rozet-notr" id="planauyum-tarih-rozet">📅 Dün</span>
+    </div>
+
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="filtre-govde">
+        <div>
+          <span class="filtre-etiket">Hangi günün verisine bakalım?</span>
+          <input type="date" id="planauyum-tarih" class="mini-input" />
+        </div>
+        <div>
+          <span class="filtre-etiket">Görünüm</span>
+          <div class="cip-grup" id="planauyum-gorunum">
+            <button type="button" class="cip aktif" data-yon="cok_geciken">En Çok Geciken</button>
+            <button type="button" class="cip" data-yon="en_dakik">En Dakik (Plana En Yakın)</button>
+            <button type="button" class="cip" data-yon="en_erken">En Erken Kalkan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid kpi-grid-2">
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Ortalama Gecikme</span><span class="kpi-ikon" style="background:#c9850022;color:#c98500;">⏱️</span></div>
+        <span class="kpi-deger" id="kpi-planauyum-gecikme">—</span>
+      </div>
+      <div class="kart kpi">
+        <div class="kpi-ust"><span class="kpi-etiket">Zamanında (±5dk)</span><span class="kpi-ikon" style="background:#199e7022;color:#199e70;">✅</span></div>
+        <span class="kpi-deger" id="kpi-planauyum-zamaninda">—</span>
+      </div>
+    </div>
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik"><h2 id="planauyum-bar-baslik">En Çok Geciken 15 Hat</h2></div>
+      <canvas id="planauyum-bar"></canvas>
+    </div>
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik"><h2>Gecikme Dağılımı</h2></div>
+      <canvas id="planauyum-hist"></canvas>
+    </div>
+    <div class="kart" style="margin-bottom:16px;">
+      <div class="kart-baslik">
+        <h2>Ham Tablo</h2>
+        <input type="text" id="planauyum-arama" class="mini-input" placeholder="Hat kodu ara…" />
+      </div>
+      <div class="tablo-sarmalayici"><table id="planauyum-tablo"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="kart">
+      <div class="kart-baslik">
+        <h2>Planlanan vs Gerçekleşen Sefer Sayısı</h2>
+        <span class="mini-rozet">Canlı · GetPlanlananSeferSaati_json</span>
+      </div>
+      <div class="filtre-govde">
+        <div style="flex:1;min-width:220px;">
+          <span class="filtre-etiket">Hat seç</span>
+          <select id="planlanan-hat-secim" class="mini-input" style="width:100%;"></select>
+        </div>
+      </div>
+      <p class="tablo-not" style="border:none;">
+        Ayrı bir servisten (GetPlanlananSeferSaati_json) seçili hattın, yukarıdaki tarihin gün tipi için
+        planlanan TÜM sefer sayısını çekip, tablodaki gerçekleşen sefer sayısıyla karşılaştırıyoruz.
+      </p>
+      <div class="kpi-grid kpi-grid-2" style="padding:0 18px 18px;">
+        <div class="kart kpi">
+          <div class="kpi-ust"><span class="kpi-etiket">Gerçekleşen Sefer</span><span class="kpi-ikon" style="background:#3987e522;color:#3987e5;">🚍</span></div>
+          <span class="kpi-deger" id="kpi-gercek-sefer">—</span>
+        </div>
+        <div class="kart kpi">
+          <div class="kpi-ust"><span class="kpi-etiket">Planlanan Sefer</span><span class="kpi-ikon" style="background:#199e7022;color:#199e70;">📋</span></div>
+          <span class="kpi-deger" id="kpi-planlanan-sefer">—</span>
+        </div>
+      </div>
+      <canvas id="planlanan-gercek-grafik" style="max-height:260px;"></canvas>
+    </div>
+  </section>
+
+</main>
+</div>
+</div>
+
+<!-- AI ASİSTAN BALONU -->
+<button id="sohbet-acma-buton" title="Yapay zeka asistanına sor">🤖</button>
+<div id="sohbet-panel" class="gizli">
+  <div class="sohbet-baslik">
+    <span>💬 İETT Asistanı</span>
+    <button id="sohbet-kapat-buton">✕</button>
+  </div>
+  <div id="sohbet-mesajlar"></div>
+  <form id="sohbet-form">
+    <input type="text" id="sohbet-girdi" placeholder="Bir şey sor…" autocomplete="off" />
+    <button type="submit">Gönder</button>
+  </form>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

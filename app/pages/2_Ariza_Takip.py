@@ -167,7 +167,13 @@ if gorunum == "Tıklanabilir noktalar":
             popup=folium.Popup(popup_metin, max_width=250),
         ).add_to(harita)
 else:
-    HeatMap(df[["NENLEM", "NBOYLAM"]].values.tolist()).add_to(harita)
+    HeatMap(
+        df[["NENLEM", "NBOYLAM"]].values.tolist(),
+        radius=30,
+        blur=25,
+        min_opacity=0.45,
+        gradient={0.2: "#3987e5", 0.4: "#199e70", 0.6: "#eda100", 0.8: "#d95926", 1.0: "#e34948"},
+    ).add_to(harita)
 
 st_folium(harita, width=1200, height=600, returned_objects=[])
 

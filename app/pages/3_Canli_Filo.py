@@ -20,6 +20,7 @@ PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
 from filo_konum import filo_konumlari, hat_konumlari  # noqa: E402
 from plana_uyum import kapino_hat_eslesmesi  # noqa: E402
+from garajlar import garajlar  # noqa: E402
 from tema import uygula as tema_uygula  # noqa: E402
 from datetime import datetime  # noqa: E402
 from zoneinfo import ZoneInfo  # noqa: E402
@@ -185,6 +186,16 @@ col_m1.metric("Gösterilen araç sayısı", len(df))
 col_m2.metric("Duruyor (<5 km/h)", int((df["Hiz"] < 5).sum()))
 col_m3.metric("Hareket halinde (≥5 km/h)", int((df["Hiz"] >= 5).sum()))
 
+garaj_goster = st.checkbox("Garajları haritada göster")
+
+
+@st.cache_data(ttl=86400)
+def garajlari_getir():
+    try:
+        return garajlar()
+    except Exception:
+        return []
+
 if secili_konum is not None:
     merkez = [secili_konum[0], secili_konum[1]]
     zoom = 16
@@ -219,6 +230,14 @@ function (row) {
 """
 
 FastMarkerCluster(data=veri, callback=js_callback).add_to(harita)
+
+if garaj_goster:
+    for g in garajlari_getir():
+        folium.Marker(
+            location=[g["enlem"], g["boylam"]],
+            icon=folium.Icon(color="darkblue", icon="home"),
+            popup=g.get("GARAJ_ADI", ""),
+        ).add_to(harita)
 
 if secili_konum is not None:
     secili_hat = hat_eslesmesi.get(secili_konum[3], "?")

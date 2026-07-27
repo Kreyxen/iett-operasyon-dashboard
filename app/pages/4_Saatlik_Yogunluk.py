@@ -16,7 +16,12 @@ PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
 from saatlik_yogunluk import veri_yukle  # noqa: E402
 from trafik_indeksi import trafik_gecmisi  # noqa: E402
+from gunluk_yolculuk import gunluk_hat_yolculuk  # noqa: E402
 from tema import uygula as tema_uygula  # noqa: E402
+from datetime import datetime, timedelta  # noqa: E402
+from zoneinfo import ZoneInfo  # noqa: E402
+
+ISTANBUL = ZoneInfo("Europe/Istanbul")
 
 st.set_page_config(page_title="Saatlik Yoğunluk", layout="wide")
 tema_uygula()
@@ -130,6 +135,62 @@ ilce_ozet = (
     .rename(columns={"town": "İlçe", "number_of_passenger": "Toplam Yolcu"})
 )
 st.dataframe(ilce_ozet, use_container_width=True)
+
+st.divider()
+st.subheader("Günün En Çok Yolculuk Yapan Hatları (Canlı)")
+st.caption(
+    "Yukarıdaki BELBİM verisinden farklı bir kaynak (GetIettYolculukHat_json) -- "
+    "istediğin güne canlı sorgu atıp o günün gerçek yolcu sayılarını çekiyor. "
+    "En çok yolculuk yapan 50 hattı döndürüyor. Bugünün verisi gün bitmeden "
+    "genelde eksik geldiği için varsayılan olarak dünü öneriyoruz."
+)
+
+secili_gun = st.date_input(
+    "Hangi günün verisine bakalım?",
+    value=datetime.now(ISTANBUL).date() - timedelta(days=1),
+    max_value=datetime.now(ISTANBUL).date(),
+    key="yolculuk_hat_tarih",
+)
+
+
+@st.cache_data(ttl=3600)
+def yolculuk_hat_yukle(tarih_str):
+    return pd.DataFrame(gunluk_hat_yolculuk(tarih_str))
+
+
+try:
+    yolculuk_hat_df = yolculuk_hat_yukle(secili_gun.strftime("%Y-%m-%d"))
+    yolculuk_hat_df = yolculuk_hat_df[yolculuk_hat_df["Hat"].notna()].sort_values("Yolculuk", ascending=False)
+
+    if yolculuk_hat_df.empty:
+        st.info("Bu gün için henüz veri yok (gün bitmeden veri gelmeyebilir, bir önceki günü dene).")
+    else:
+        st.metric("Toplam yolculuk (üst 50 hat)", f"{yolculuk_hat_df['Yolculuk'].sum():,}".replace(",", "."))
+
+        fig_yolculuk_hat = px.bar(
+            yolculuk_hat_df.head(20),
+            x="Hat",
+            y="Yolculuk",
+            labels={"Hat": "Hat", "Yolculuk": "Yolcu Sayısı"},
+            title=f"{secili_gun.strftime('%d.%m.%Y')} -- en çok yolculuk yapan 20 hat",
+            template="plotly_dark",
+            color_discrete_sequence=["#3987e5"],
+        )
+        fig_yolculuk_hat.update_layout(
+            height=450,
+            plot_bgcolor="#1a1a19",
+            paper_bgcolor="#1a1a19",
+            font=dict(color="#c3c2b7"),
+            title_font=dict(color="#ffffff", size=18),
+            xaxis=dict(gridcolor="#2c2c2a", zerolinecolor="#383835"),
+            yaxis=dict(gridcolor="#2c2c2a", zerolinecolor="#383835"),
+        )
+        st.plotly_chart(fig_yolculuk_hat, use_container_width=True)
+
+        with st.expander("Tüm 50 hat (ham tablo)"):
+            st.dataframe(yolculuk_hat_df[["Hat", "Yolculuk"]], use_container_width=True)
+except Exception as e:
+    st.error(f"Servisten veri alınamadı: {e}")
 
 st.divider()
 st.subheader("Şehir Geneli Trafik Yoğunluğu (Canlı Trafik İndeksi)")

@@ -18,6 +18,7 @@ import streamlit as st
 PROJE_KOKU = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJE_KOKU / "src"))
 from plana_uyum import gorevleri_cek, gecikme_hesapla  # noqa: E402
+from planlanan_sefer import planlanan_sefer_sayisi, GUNTIPI_ETIKET, GUNTIPI_KODU  # noqa: E402
 from tema import uygula as tema_uygula  # noqa: E402
 
 ISTANBUL = ZoneInfo("Europe/Istanbul")
@@ -143,3 +144,72 @@ with st.expander("Ham tablo"):
         gosterilecek[["SHATKODU", "SKAPINUMARA", "planlanan", "gercek", "gecikme_dk"]],
         use_container_width=True,
     )
+
+st.divider()
+
+st.subheader("Planlanan vs Gerçekleşen Sefer Sayısı")
+st.caption(
+    "Ayrı bir servisten (GetPlanlananSeferSaati_json) o hattın seçili gün tipi için "
+    "planlanan TÜM sefer sayısını çekip, yukarıdaki gerçekleşen sefer sayısıyla "
+    "karşılaştırıyoruz. Bu, 'kaç sefer yapılması gerekiyordu' sorusuna GetPlanaUyum'un "
+    "(çalışmayan servis) veremediği bir cevap."
+)
+
+gun_tipi_kodu = GUNTIPI_KODU[secili_tarih.weekday()]
+st.caption(f"{secili_tarih.strftime('%d.%m.%Y')} -> gün tipi: **{GUNTIPI_ETIKET[gun_tipi_kodu]}**")
+
+hat_secimi_planlanan = st.selectbox(
+    "Bir hat seç",
+    options=sorted(df["SHATKODU"].unique()),
+    key="hat_secimi_planlanan",
+)
+
+if hat_secimi_planlanan:
+    gercek_sefer_sayisi = len(df[df["SHATKODU"] == hat_secimi_planlanan])
+    with st.spinner("Planlanan sefer saatleri çekiliyor..."):
+        planlanan_sayisi = planlanan_sefer_sayisi(hat_secimi_planlanan, secili_tarih)
+
+    col_p1, col_p2, col_p3 = st.columns(3)
+    col_p1.metric("Gerçekleşen Sefer", gercek_sefer_sayisi)
+    if planlanan_sayisi is None:
+        col_p2.metric("Planlanan Sefer", "—")
+        col_p3.metric("Fark", "—")
+        st.warning("Bu hat için planlanan sefer verisi alınamadı (servis o an yanıt vermemiş olabilir).")
+    else:
+        col_p2.metric("Planlanan Sefer", planlanan_sayisi)
+        fark = gercek_sefer_sayisi - planlanan_sayisi
+        col_p3.metric(
+            "Fark",
+            fark,
+            delta=f"{'fazla' if fark > 0 else 'eksik' if fark < 0 else 'tam'}",
+            delta_color="off",
+        )
+        if planlanan_sayisi > 0:
+            oran = 100 * gercek_sefer_sayisi / planlanan_sayisi
+            st.caption(f"Gerçekleşen / Planlanan oranı: %{oran:.1f}")
+
+        fig_karsilastirma = px.bar(
+            pd.DataFrame({
+                "tur": ["Gerçekleşen", "Planlanan"],
+                "sefer": [gercek_sefer_sayisi, planlanan_sayisi],
+            }),
+            x="sefer",
+            y="tur",
+            orientation="h",
+            color="tur",
+            color_discrete_map={"Gerçekleşen": "#3987e5", "Planlanan": "#199e70"},
+            labels={"sefer": "Sefer Sayısı", "tur": ""},
+            title=f"Hat {hat_secimi_planlanan} — Gerçekleşen vs Planlanan",
+            template="plotly_dark",
+        )
+        fig_karsilastirma.update_layout(
+            height=280,
+            showlegend=False,
+            plot_bgcolor="#1a1a19",
+            paper_bgcolor="#1a1a19",
+            font=dict(color="#c3c2b7"),
+            title_font=dict(color="#ffffff", size=16),
+            xaxis=dict(gridcolor="#2c2c2a", zerolinecolor="#383835"),
+            yaxis=dict(gridcolor="#2c2c2a", zerolinecolor="#383835"),
+        )
+        st.plotly_chart(fig_karsilastirma, use_container_width=True)
