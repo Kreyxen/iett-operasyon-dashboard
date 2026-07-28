@@ -350,11 +350,18 @@ def planlanan_sefer(hat: str, tarih: str):
     return {"hat": hat, "planlanan": sayisi}
 
 
+class SohbetMesaji(BaseModel):
+    role: str
+    content: str
+
+
 class SohbetIstegi(BaseModel):
     mesaj: str
+    gecmis: list[SohbetMesaji] = []
 
 
 @app.post("/api/asistan")
 def asistan_sor(istek: SohbetIstegi):
-    cevap = asistan.soru_sor(istek.mesaj)
-    return {"cevap": cevap}
+    gecmis = [{"role": m.role, "content": m.content} for m in istek.gecmis[-6:]]
+    cevap, hat_kodu = asistan.soru_sor(istek.mesaj, gecmis=gecmis)
+    return {"cevap": cevap, "hat_kodu": hat_kodu}

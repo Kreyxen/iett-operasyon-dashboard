@@ -869,26 +869,41 @@ function planauyumTabloCiz(gorevler) {
     .join("");
 }
 
-let planlananGercekGrafik = null;
-
 async function planlananGercekGoster(hat, tarihStr) {
   if (!hat) return;
   const gercekSayisi = planauyumVeri.gorevler.filter((g) => g.SHATKODU === hat).length;
   document.getElementById("kpi-gercek-sefer").textContent = gercekSayisi;
   document.getElementById("kpi-planlanan-sefer").textContent = "…";
 
+  const barDolu = document.getElementById("oran-bar-dolu");
+  const yuzdeMetin = document.getElementById("oran-yuzde-metin");
+  const aciklamaMetin = document.getElementById("oran-aciklama-metin");
+  yuzdeMetin.textContent = "…";
+  aciklamaMetin.textContent = "";
+  barDolu.style.width = "0%";
+
   const { planlanan } = await fetch(`${API}/api/planlanan-sefer?hat=${encodeURIComponent(hat)}&tarih=${tarihStr}`).then((r) => r.json());
   document.getElementById("kpi-planlanan-sefer").textContent = planlanan ?? "—";
 
-  if (planlananGercekGrafik) planlananGercekGrafik.destroy();
-  planlananGercekGrafik = new Chart(document.getElementById("planlanan-gercek-grafik"), {
-    type: "bar",
-    data: {
-      labels: ["Gerçekleşen", "Planlanan"],
-      datasets: [{ data: [gercekSayisi, planlanan ?? 0], backgroundColor: ["#3987e5", "#199e70"] }],
-    },
-    options: { ...grafikSecenekleri(), indexAxis: "y", plugins: { legend: { display: false } } },
-  });
+  if (!planlanan) {
+    yuzdeMetin.textContent = "—";
+    aciklamaMetin.textContent = "Planlanan sefer verisi alınamadı.";
+    return;
+  }
+
+  const oran = (100 * gercekSayisi) / planlanan;
+  let renk = "#e34948";
+  if (oran >= 95) renk = "#199e70";
+  else if (oran >= 80) renk = "#c98500";
+
+  yuzdeMetin.textContent = `%${oran.toFixed(0)}`;
+  yuzdeMetin.style.color = renk;
+  barDolu.style.width = `${Math.min(oran, 100)}%`;
+  barDolu.style.background = renk;
+  aciklamaMetin.textContent =
+    oran >= 100
+      ? `Planlanandan ${gercekSayisi - planlanan} sefer fazla yapılmış (${gercekSayisi} / ${planlanan}).`
+      : `${planlanan - gercekSayisi} sefer eksik yapılmış (${gercekSayisi} / ${planlanan}).`;
 }
 
 function planlananHatSecimiKur(tarihStr) {
@@ -948,19 +963,33 @@ function kacir(metin) {
   return d.innerHTML;
 }
 
+// Her sohbet paneli (balon / Genel Bakış'taki gömülü) kendi geçmişini tutuyor --
+// "o hat", "o araç" gibi önceki cevaba atıflı sorular çalışsın diye. Maliyet
+// kontrolü için backend zaten son 6 mesajla sınırlıyor, burada da kırpıyoruz.
+const sohbetGecmisleri = new Map();
+
 async function sohbeteMesajGonder(mesaj, kapsayici) {
+  if (!sohbetGecmisleri.has(kapsayici)) sohbetGecmisleri.set(kapsayici, []);
+  const gecmis = sohbetGecmisleri.get(kapsayici);
+
   kapsayici.insertAdjacentHTML("beforeend", sohbetSatiri("kullanici", kacir(mesaj)));
   const yukleniyorId = `yukleniyor-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   kapsayici.insertAdjacentHTML("beforeend", sohbetSatiri("asistan", `<span class="dusunuyor">Düşünüyor…</span>`, yukleniyorId));
   kapsayici.scrollTop = kapsayici.scrollHeight;
 
   try {
-    const { cevap } = await fetch(`${API}/api/asistan`, {
+    const { cevap, hat_kodu } = await fetch(`${API}/api/asistan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mesaj }),
+      body: JSON.stringify({ mesaj, gecmis: gecmis.slice(-6) }),
     }).then((r) => r.json());
     document.getElementById(yukleniyorId).outerHTML = sohbetSatiri("asistan", marked.parse(cevap));
+    gecmis.push({ role: "user", content: mesaj }, { role: "assistant", content: cevap });
+
+    if (hat_kodu) {
+      await sekmeyeGec("verimlilik");
+      guzergahYukle(hat_kodu);
+    }
   } catch (err) {
     document.getElementById(yukleniyorId).outerHTML = sohbetSatiri("asistan", "Bağlantı hatası, backend çalışıyor mu?");
   }
@@ -993,6 +1022,8 @@ const HAZIR_SORULAR = [
   "10A hattının verimlilik durumu nedir?",
   "14ŞB hattında kaç araç var?",
   "34 HO 1000 plakalı aracı bul",
+  "14ŞB hattı için en yakın garaj neresi?",
+  "132H hattının kalkış saatleri nedir?",
 ];
 
 const anaSohbetMesajlar = document.getElementById("ana-sohbet-mesajlar");

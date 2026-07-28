@@ -63,10 +63,7 @@
   <!-- GENEL BAKIŞ -->
   <section class="sayfa aktif" id="sayfa-genel">
     <div class="sayfa-ust">
-      <div>
-        <h2 class="sayfa-baslik">Genel Bakış</h2>
-        <p class="aciklama">İETT filosunun anlık operasyonel durumu, tek ekranda.</p>
-      </div>
+      <h2 class="sayfa-baslik">Genel Bakış</h2>
       <span class="canli-rozet">🟢 Canlı</span>
     </div>
     <div class="kpi-grid">
@@ -103,7 +100,7 @@
     </div>
 
     <div class="kart" style="margin-top:16px;">
-      <div class="kart-baslik"><h2>🤖 AI Asistan</h2><span class="mini-rozet">Claude · canlı veriye erişimi var</span></div>
+      <div class="kart-baslik"><h2>🤖 AI Asistan</h2></div>
       <div class="ana-sohbet">
         <div class="hazir-sorular" id="hazir-sorular-genel"></div>
         <div id="ana-sohbet-mesajlar" class="ana-sohbet-mesajlar"></div>
@@ -118,10 +115,7 @@
   <!-- VERİMLİLİK -->
   <section class="sayfa" id="sayfa-verimlilik">
     <div class="sayfa-ust">
-      <div>
-        <h2 class="sayfa-baslik">Verimlilik Gezgini</h2>
-        <p class="aciklama">Verimlilik = yolcu / km oranı. Haziran ve Aralık 2024 verileriyle 0.960 korelasyonla doğrulanmış bir metrik.</p>
-      </div>
+      <h2 class="sayfa-baslik">Verimlilik Gezgini</h2>
       <span class="canli-rozet canli-rozet-notr">📊 İşlenmiş Veri</span>
     </div>
     <div class="kpi-grid kpi-grid-2">
@@ -196,10 +190,7 @@
   <!-- ARIZA TAKİP -->
   <section class="sayfa" id="sayfa-ariza">
     <div class="sayfa-ust">
-      <div>
-        <h2 class="sayfa-baslik">Arıza Takip</h2>
-        <p class="aciklama">🔴 Sistem (İETT) · ⚫ Sentetik (Demo) · 🔵 Manuel Bildirim — bozuk satıh (yol bozukluğu) bildirimleri</p>
-      </div>
+      <h2 class="sayfa-baslik">Arıza Takip</h2>
       <span class="canli-rozet canli-rozet-notr">🗂️ Karma Kaynak</span>
     </div>
     <div class="kpi-grid kpi-grid-2">
@@ -245,10 +236,7 @@
   <!-- CANLI FİLO -->
   <section class="sayfa" id="sayfa-filo">
     <div class="sayfa-ust">
-      <div>
-        <h2 class="sayfa-baslik">Canlı Filo</h2>
-        <p class="aciklama">Filodaki tüm operatörlerin anlık araç konumları.</p>
-      </div>
+      <h2 class="sayfa-baslik">Canlı Filo</h2>
       <span class="canli-rozet">🟢 Canlı</span>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
@@ -318,10 +306,7 @@
   <!-- SAATLİK YOĞUNLUK -->
   <section class="sayfa" id="sayfa-yogunluk">
     <div class="sayfa-ust">
-      <div>
-        <h2 class="sayfa-baslik">Saatlik Yoğunluk</h2>
-        <p class="aciklama">BELBİM turnike verisi — Haziran 2024, hafta içi vs hafta sonu.</p>
-      </div>
+      <h2 class="sayfa-baslik">Saatlik Yoğunluk</h2>
       <span class="canli-rozet canli-rozet-notr">📊 Arşiv Veri</span>
     </div>
 
@@ -381,10 +366,7 @@
   <!-- DUYURULAR -->
   <section class="sayfa" id="sayfa-duyurular">
     <div class="sayfa-ust">
-      <div>
-        <h2 class="sayfa-baslik">Duyurular</h2>
-        <p class="aciklama">Hat bazlı sefer iptali ve güzergah değişikliği duyuruları.</p>
-      </div>
+      <h2 class="sayfa-baslik">Duyurular</h2>
       <span class="canli-rozet">🟢 Canlı</span>
     </div>
     <div class="kpi-grid kpi-grid-2">
@@ -416,10 +398,7 @@
   <!-- KAZA HARİTASI -->
   <section class="sayfa" id="sayfa-kaza">
     <div class="sayfa-ust">
-      <div>
-        <h2 class="sayfa-baslik">Kaza Haritası</h2>
-        <p class="aciklama">Servis sadece kaza saati + koordinat veriyor; hangi hat/araç olduğu bilgisi yok. Son 14 gün.</p>
-      </div>
+      <h2 class="sayfa-baslik">Kaza Haritası</h2>
       <span class="canli-rozet canli-rozet-notr">📅 Son 14 Gün</span>
     </div>
     <div class="kpi-grid kpi-grid-2">
@@ -440,10 +419,7 @@
   <!-- PLANA UYUM -->
   <section class="sayfa" id="sayfa-planauyum">
     <div class="sayfa-ust">
-      <div>
-        <h2 class="sayfa-baslik">Plana Uyum</h2>
-        <p class="aciklama">Planlanan vs gerçekleşen sefer başlangıç zamanı farkından hesaplanır (dünün verisi).</p>
-      </div>
+      <h2 class="sayfa-baslik">Plana Uyum</h2>
       <span class="canli-rozet canli-rozet-notr" id="planauyum-tarih-rozet">📅 Dün</span>
     </div>
 
@@ -515,7 +491,13 @@
           <span class="kpi-deger" id="kpi-planlanan-sefer">—</span>
         </div>
       </div>
-      <canvas id="planlanan-gercek-grafik" style="max-height:260px;"></canvas>
+      <div class="oran-gosterge">
+        <div class="oran-ust">
+          <span class="oran-yuzde" id="oran-yuzde-metin">—</span>
+          <span class="oran-aciklama" id="oran-aciklama-metin"></span>
+        </div>
+        <div class="oran-bar-govde"><div class="oran-bar-dolu" id="oran-bar-dolu"></div></div>
+      </div>
     </div>
   </section>
 

@@ -94,6 +94,8 @@ HAZIR_SORULAR = [
     "10A hattının verimlilik durumu nedir?",
     "14ŞB hattında kaç araç var?",
     "34 HO 1000 plakalı aracı bul",
+    "14ŞB hattı için en yakın garaj neresi?",
+    "132H hattının kalkış saatleri nedir?",
 ]
 
 st.caption("Hazır sorular:")
@@ -120,7 +122,14 @@ if kullanici_mesaji:
 
     with st.chat_message("assistant"):
         try:
-            cevap = soru_sor(kullanici_mesaji)
+            # Son birkaç turu (maliyet kontrolü için sınırlı) Claude formatına
+            # çevirip geçmiş olarak veriyoruz -- "o hat", "o araç" gibi önceki
+            # cevaba atıflı sorular çalışsın diye.
+            onceki_gecmis = [
+                {"role": m["rol"], "content": m["icerik"]}
+                for m in st.session_state["sohbet_gecmisi"][:-1][-6:]
+            ]
+            cevap, _ = soru_sor(kullanici_mesaji, gecmis=onceki_gecmis)
             st.write(cevap)
         except Exception as e:
             cevap = None

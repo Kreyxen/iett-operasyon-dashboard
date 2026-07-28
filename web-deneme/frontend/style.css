@@ -556,6 +556,40 @@ tr:hover td { background: #ffffff06; }
   .guzergah-govde { grid-template-columns: 1fr; }
 }
 
+/* --- Plana Uyum: tamamlanma oranı göstergesi --- */
+.oran-gosterge { padding: 4px 18px 20px; }
+
+.oran-ust {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.oran-yuzde {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.oran-aciklama { font-size: 12.5px; color: var(--text-dim); }
+
+.oran-bar-govde {
+  height: 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.oran-bar-dolu {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.5s ease, background 0.3s ease;
+}
+
 /* --- Ana Sayfa gömülü sohbet --- */
 .ana-sohbet { padding: 16px; }
 
