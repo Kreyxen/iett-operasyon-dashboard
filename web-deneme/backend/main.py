@@ -30,7 +30,7 @@ from saatlik_yogunluk import veri_yukle  # noqa: E402
 from plana_uyum import gorevleri_cek, gecikme_hesapla  # noqa: E402
 from gunluk_yolculuk import gunluk_hat_yolculuk  # noqa: E402
 from garajlar import garajlar  # noqa: E402
-from planlanan_sefer import planlanan_sefer_sayisi  # noqa: E402
+from planlanan_sefer import hat_planlanan_detay  # noqa: E402
 import asistan  # noqa: E402
 
 PROCESSED = PROJE_KOKU / "data" / "processed"
@@ -346,8 +346,10 @@ def garajlar_endpoint():
 @app.get("/api/planlanan-sefer")
 def planlanan_sefer(hat: str, tarih: str):
     tarih_obj = datetime.strptime(tarih, "%Y%m%d").date()
-    sayisi = _cache(f"planlanan_sefer_{hat}_{tarih}", 3600, lambda: planlanan_sefer_sayisi(hat, tarih_obj))
-    return {"hat": hat, "planlanan": sayisi}
+    detay = _cache(f"planlanan_sefer_{hat}_{tarih}", 3600, lambda: hat_planlanan_detay(hat, tarih_obj))
+    if detay is None:
+        return {"hat": hat, "planlanan": None, "kalkis_saatleri": {}}
+    return {"hat": hat, **detay}
 
 
 class SohbetMesaji(BaseModel):
@@ -363,5 +365,5 @@ class SohbetIstegi(BaseModel):
 @app.post("/api/asistan")
 def asistan_sor(istek: SohbetIstegi):
     gecmis = [{"role": m.role, "content": m.content} for m in istek.gecmis[-6:]]
-    cevap, hat_kodu = asistan.soru_sor(istek.mesaj, gecmis=gecmis)
-    return {"cevap": cevap, "hat_kodu": hat_kodu}
+    cevap, harita = asistan.soru_sor(istek.mesaj, gecmis=gecmis)
+    return {"cevap": cevap, "harita": harita}

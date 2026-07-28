@@ -869,10 +869,71 @@ function planauyumTabloCiz(gorevler) {
     .join("");
 }
 
+let planlananDetayState = { gercekListe: [], kalkisSaatleri: {} };
+
+function detayPanelleriKapat() {
+  document.getElementById("gercek-detay-panel").classList.add("gizli");
+  document.getElementById("planlanan-detay-panel").classList.add("gizli");
+  document.getElementById("kpi-gercek-kutu").classList.remove("acik");
+  document.getElementById("kpi-planlanan-kutu").classList.remove("acik");
+}
+
+function gercekDetayCiz() {
+  const tablo = document.getElementById("gercek-detay-tablo");
+  tablo.querySelector("thead").innerHTML = "<tr><th>Kapı No</th><th>Gecikme (dk)</th></tr>";
+  tablo.querySelector("tbody").innerHTML = planlananDetayState.gercekListe
+    .map((g) => `<tr><td>${g.SKAPINUMARA}</td><td>${g.gecikme_dk.toFixed(1)}</td></tr>`)
+    .join("") || `<tr><td colspan="2">Kayıt yok.</td></tr>`;
+}
+
+function planlananDetayCiz() {
+  const panel = document.getElementById("planlanan-detay-panel");
+  const gruplar = planlananDetayState.kalkisSaatleri;
+  if (!gruplar || !Object.keys(gruplar).length) {
+    panel.innerHTML = `<p class="yukleniyor">Planlanan saat verisi alınamadı.</p>`;
+    return;
+  }
+  panel.innerHTML = Object.entries(gruplar)
+    .map(
+      ([kalkisYeri, gunGruplari]) => `
+        <div class="kalkis-grup">
+          <div class="kalkis-grup-baslik">${kalkisYeri} KALKIŞ</div>
+          ${Object.entries(gunGruplari)
+            .map(([gunTipi, saatler]) => `<div class="kalkis-gun-satir"><b>${gunTipi}:</b> ${saatler.join(", ")}</div>`)
+            .join("")}
+        </div>`
+    )
+    .join("");
+}
+
+document.getElementById("kpi-gercek-kutu").addEventListener("click", () => {
+  const panel = document.getElementById("gercek-detay-panel");
+  const acikMi = !panel.classList.contains("gizli");
+  detayPanelleriKapat();
+  if (!acikMi) {
+    gercekDetayCiz();
+    panel.classList.remove("gizli");
+    document.getElementById("kpi-gercek-kutu").classList.add("acik");
+  }
+});
+
+document.getElementById("kpi-planlanan-kutu").addEventListener("click", () => {
+  const panel = document.getElementById("planlanan-detay-panel");
+  const acikMi = !panel.classList.contains("gizli");
+  detayPanelleriKapat();
+  if (!acikMi) {
+    planlananDetayCiz();
+    panel.classList.remove("gizli");
+    document.getElementById("kpi-planlanan-kutu").classList.add("acik");
+  }
+});
+
 async function planlananGercekGoster(hat, tarihStr) {
   if (!hat) return;
-  const gercekSayisi = planauyumVeri.gorevler.filter((g) => g.SHATKODU === hat).length;
-  document.getElementById("kpi-gercek-sefer").textContent = gercekSayisi;
+  detayPanelleriKapat();
+  const gercekListe = planauyumVeri.gorevler.filter((g) => g.SHATKODU === hat);
+  planlananDetayState = { gercekListe, kalkisSaatleri: {} };
+  document.getElementById("kpi-gercek-sefer").textContent = gercekListe.length;
   document.getElementById("kpi-planlanan-sefer").textContent = "…";
 
   const barDolu = document.getElementById("oran-bar-dolu");
@@ -882,7 +943,9 @@ async function planlananGercekGoster(hat, tarihStr) {
   aciklamaMetin.textContent = "";
   barDolu.style.width = "0%";
 
-  const { planlanan } = await fetch(`${API}/api/planlanan-sefer?hat=${encodeURIComponent(hat)}&tarih=${tarihStr}`).then((r) => r.json());
+  const veri = await fetch(`${API}/api/planlanan-sefer?hat=${encodeURIComponent(hat)}&tarih=${tarihStr}`).then((r) => r.json());
+  const planlanan = veri.planlanan;
+  planlananDetayState.kalkisSaatleri = veri.kalkis_saatleri || {};
   document.getElementById("kpi-planlanan-sefer").textContent = planlanan ?? "—";
 
   if (!planlanan) {
@@ -891,6 +954,7 @@ async function planlananGercekGoster(hat, tarihStr) {
     return;
   }
 
+  const gercekSayisi = gercekListe.length;
   const oran = (100 * gercekSayisi) / planlanan;
   let renk = "#e34948";
   if (oran >= 95) renk = "#199e70";
@@ -948,13 +1012,27 @@ async function planaUyumYukle() {
 }
 
 // --- AI Asistan (ortak fonksiyon -- hem balon hem Genel Bakış'taki gömülü sohbet kullanıyor) ---
-function sohbetSatiri(rol, icerikHtml, id) {
+function sohbetSatiri(rol, icerikHtml, id, haritaId) {
   const avatar = rol === "kullanici" ? "🧑" : "🤖";
+  const haritaHtml = haritaId ? `<div id="${haritaId}" class="mini-sohbet-harita"></div>` : "";
   return `
     <div class="sohbet-satir ${rol}"${id ? ` id="${id}"` : ""}>
       <span class="sohbet-avatar">${avatar}</span>
-      <div class="sohbet-icerik">${icerikHtml}</div>
+      <div class="sohbet-icerik">${icerikHtml}${haritaHtml}</div>
     </div>`;
+}
+
+function miniSohbetHaritasiCiz(elementId, harita) {
+  const el = document.getElementById(elementId);
+  if (!el || !harita || !harita.noktalar || !harita.noktalar.length) return;
+  const h = koyuHarita(elementId, harita.merkez, 15);
+  harita.noktalar.forEach((n) => {
+    const renk = n.tip === "arac" ? "#199e70" : "#3987e5";
+    L.marker([n.lat, n.lon], { icon: noktaIkonu(renk, 7) }).bindPopup(n.etiket).addTo(h);
+  });
+  if (harita.noktalar.length > 1) {
+    h.fitBounds(harita.noktalar.map((n) => [n.lat, n.lon]), { padding: [24, 24] });
+  }
 }
 
 function kacir(metin) {
@@ -978,18 +1056,18 @@ async function sohbeteMesajGonder(mesaj, kapsayici) {
   kapsayici.scrollTop = kapsayici.scrollHeight;
 
   try {
-    const { cevap, hat_kodu } = await fetch(`${API}/api/asistan`, {
+    const { cevap, harita } = await fetch(`${API}/api/asistan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mesaj, gecmis: gecmis.slice(-6) }),
     }).then((r) => r.json());
-    document.getElementById(yukleniyorId).outerHTML = sohbetSatiri("asistan", marked.parse(cevap));
+
+    const haritaVarMi = harita && harita.noktalar && harita.noktalar.length;
+    const haritaId = haritaVarMi ? `mini-harita-${Date.now()}-${Math.random().toString(36).slice(2)}` : null;
+    document.getElementById(yukleniyorId).outerHTML = sohbetSatiri("asistan", marked.parse(cevap), null, haritaId);
     gecmis.push({ role: "user", content: mesaj }, { role: "assistant", content: cevap });
 
-    if (hat_kodu) {
-      await sekmeyeGec("verimlilik");
-      guzergahYukle(hat_kodu);
-    }
+    if (haritaId) miniSohbetHaritasiCiz(haritaId, harita);
   } catch (err) {
     document.getElementById(yukleniyorId).outerHTML = sohbetSatiri("asistan", "Bağlantı hatası, backend çalışıyor mu?");
   }

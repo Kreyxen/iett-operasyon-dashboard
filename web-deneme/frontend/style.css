@@ -12,6 +12,7 @@
   --red: #e34948;
   --chart-grid: #2c2c2a;
   --chart-tick: #8b8d94;
+  --hover-bg: #262932;
 }
 
 :root[data-theme="light"] {
@@ -23,6 +24,7 @@
   --text-dim: #6b6e76;
   --chart-grid: #e3e5e9;
   --chart-tick: #6b6e76;
+  --hover-bg: #e3e5e9;
 }
 
 :root[data-theme="light"] .marka-ikon { box-shadow: 0 2px 8px rgba(57,135,229,0.3); }
@@ -32,6 +34,14 @@
 :root[data-theme="light"] .leaflet-tile-pane { filter: none; }
 
 * { box-sizing: border-box; }
+
+button {
+  appearance: none;
+  -webkit-appearance: none;
+  forced-color-adjust: none;
+  font: inherit;
+}
+button:focus, button:focus-visible { outline: none; }
 
 body {
   margin: 0;
@@ -107,7 +117,7 @@ body {
   background: var(--accent);
 }
 
-.nav-btn:hover { background: #23262f; color: var(--text); }
+.nav-btn:hover { background: var(--hover-bg); color: var(--text); }
 
 .nav-btn.aktif {
   background: linear-gradient(135deg, #2a4c85, #1c355e);
@@ -453,6 +463,8 @@ tr:hover td { background: #ffffff06; }
 .cip-grup { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .cip {
+  appearance: none;
+  -webkit-appearance: none;
   background: var(--panel-2);
   border: 1px solid var(--border);
   color: var(--text-dim);
@@ -464,7 +476,13 @@ tr:hover td { background: #ffffff06; }
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.cip:hover { color: var(--text); border-color: var(--text-dim); }
+.cip:hover,
+.cip:focus,
+.cip:focus-visible {
+  color: var(--text);
+  border-color: var(--text-dim);
+  outline: none;
+}
 
 .cip.aktif {
   background: #3987e522;
@@ -556,6 +574,41 @@ tr:hover td { background: #ffffff06; }
   .guzergah-govde { grid-template-columns: 1fr; }
 }
 
+/* --- Plana Uyum: tıklanabilir KPI + detay panelleri --- */
+.kpi-tiklanabilir {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  text-align: left;
+  font-family: "IBM Plex Sans", sans-serif;
+  transition: border-color 0.15s, background 0.15s;
+}
+.kpi-tiklanabilir:hover,
+.kpi-tiklanabilir:focus,
+.kpi-tiklanabilir:focus-visible {
+  border-color: var(--accent);
+  background: var(--panel-2);
+  outline: none;
+}
+.kpi-tiklanabilir.acik { border-color: var(--accent); }
+
+.detay-panel {
+  margin: 0 18px 18px;
+  padding: 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.kalkis-grup { margin-bottom: 12px; }
+.kalkis-grup:last-child { margin-bottom: 0; }
+.kalkis-grup-baslik { font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.kalkis-gun-satir { font-size: 11.5px; color: var(--text-dim); margin-bottom: 3px; line-height: 1.5; }
+.kalkis-gun-satir b { color: var(--text); font-weight: 600; }
+
 /* --- Plana Uyum: tamamlanma oranı göstergesi --- */
 .oran-gosterge { padding: 4px 18px 20px; }
 
@@ -601,6 +654,8 @@ tr:hover td { background: #ffffff06; }
 }
 
 .hazir-soru-btn {
+  appearance: none;
+  -webkit-appearance: none;
   background: var(--panel-2);
   border: 1px solid var(--border);
   color: var(--text);
@@ -612,7 +667,17 @@ tr:hover td { background: #ffffff06; }
   font-family: "IBM Plex Sans", sans-serif;
   transition: background 0.15s, border-color 0.15s;
 }
-.hazir-soru-btn:hover { background: #262932; border-color: var(--accent); }
+.hazir-soru-btn:hover,
+.hazir-soru-btn:focus,
+.hazir-soru-btn:focus-visible,
+.hazir-soru-btn:active {
+  background: var(--hover-bg) !important;
+  border-color: var(--accent) !important;
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
 
 .ana-sohbet-mesajlar {
   display: flex;
@@ -712,6 +777,7 @@ tr:hover td { background: #ffffff06; }
   z-index: 1000;
 }
 
+.gizli { display: none; }
 #sohbet-panel.gizli { display: none; }
 
 .sohbet-baslik {
@@ -764,6 +830,13 @@ tr:hover td { background: #ffffff06; }
 .sohbet-satir.asistan .sohbet-avatar { background: #199e7022; }
 
 .sohbet-icerik { line-height: 1.5; font-size: 13px; min-width: 0; }
+.mini-sohbet-harita {
+  height: 190px;
+  border-radius: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
 .sohbet-icerik .dusunuyor { color: var(--text-dim); font-style: italic; }
 .sohbet-icerik p { margin: 0 0 8px; }
 .sohbet-icerik p:last-child { margin-bottom: 0; }

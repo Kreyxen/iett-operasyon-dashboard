@@ -64,8 +64,11 @@ def tahmini_varislar(hat_kodu, hedef_durak_kodu, en_fazla=5):
     hat_df = guzergah[guzergah["HATKODU"].astype(str).str.lower() == hat_kodu.lower()]
     if hat_df.empty:
         return {"hata": f"'{hat_kodu}' hattı için güzergah verisi bulunamadı."}
-    if str(hedef_durak_kodu) not in hat_df["DURAKKODU"].astype(str).values:
+    hedef_satirlari_ham = hat_df[hat_df["DURAKKODU"].astype(str) == str(hedef_durak_kodu)]
+    if hedef_satirlari_ham.empty:
         return {"hata": f"Bu hat üzerinde '{hedef_durak_kodu}' kodlu durak bulunamadı."}
+    durak_lat = float(hedef_satirlari_ham.iloc[0]["enlem"])
+    durak_lon = float(hedef_satirlari_ham.iloc[0]["boylam"])
 
     try:
         canli_araclar = hat_konumlari(hat_kodu)
@@ -103,11 +106,17 @@ def tahmini_varislar(hat_kodu, hedef_durak_kodu, en_fazla=5):
             hiz = hiz_haritasi.get(arac.get("kapino"), 0)
             etkin_hiz = max(hiz, MIN_ETKIN_HIZ_KMH)
             dakika = (kalan_km / etkin_hiz) * 60
+            try:
+                arac_lat, arac_lon = float(arac.get("enlem")), float(arac.get("boylam"))
+            except (TypeError, ValueError):
+                arac_lat = arac_lon = None
             sonuclar.append({
                 "kapino": arac.get("kapino"),
                 "kalan_km": round(kalan_km, 2),
                 "anlik_hiz": round(hiz, 1),
                 "tahmini_dakika": round(dakika, 1),
+                "lat": arac_lat,
+                "lon": arac_lon,
             })
             break  # bu araç için doğru yön bulundu, aynı aracı diğer yönde tekrar sayma
 
@@ -115,4 +124,4 @@ def tahmini_varislar(hat_kodu, hedef_durak_kodu, en_fazla=5):
         return {"hata": "Bu durağa şu an yaklaşan bir araç tespit edilemedi (araçlar durağı geçmiş olabilir)."}
 
     sonuclar.sort(key=lambda s: s["tahmini_dakika"])
-    return {"tahminler": sonuclar[:en_fazla]}
+    return {"tahminler": sonuclar[:en_fazla], "durak_lat": durak_lat, "durak_lon": durak_lon}

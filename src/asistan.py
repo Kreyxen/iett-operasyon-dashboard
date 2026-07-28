@@ -39,6 +39,17 @@ PROCESSED_KLASOR = PROJE_KOKU / "data" / "processed"
 
 MODEL = "claude-haiku-4-5-20251001"  # en ucuz/hızlı Claude modeli -- bu basit görevler için yeterli
 
+# Konum içeren bir araç (durak_ara, hat_guzergahi, arac_ara, otobus_tahmini_varis vb.)
+# çağrıldığında burayı doldurur -- soru_sor() turun sonunda bunu okuyup frontend'e
+# döndürür, frontend de sayfa değiştirmek yerine cevabın içine küçük bir harita
+# gömebilir. Sayfa yönlendirmesi YOK, sadece cevapla birlikte gösterilecek koordinat verisi.
+_SON_HARITA = None
+
+
+def _harita_ayarla(merkez, noktalar):
+    global _SON_HARITA
+    _SON_HARITA = {"merkez": merkez, "noktalar": noktalar}
+
 DASHBOARD_BILGISI = (
     "Bu dashboard'un (İETT Operasyon Dashboard) sayfaları, verileri ve ne işe "
     "yaradıkları:\n"
@@ -354,6 +365,12 @@ def arac_ara(arama):
         f"Plaka {k['Plaka']}, Kapı No {k['KapiNo']}, Hız {k['Hiz']} km/h, Operatör {k['Operator']}"
         for k in eslesenler[:5]
     )
+    try:
+        ilk = eslesenler[0]
+        lat, lon = float(ilk["Enlem"]), float(ilk["Boylam"])
+        _harita_ayarla([lat, lon], [{"lat": lat, "lon": lon, "etiket": f"{ilk['Plaka']} ({ilk['KapiNo']})", "tip": "arac"}])
+    except (TypeError, ValueError, KeyError):
+        pass
     return f"{len(eslesenler)} eşleşme bulundu. {detaylar}"
 
 
@@ -417,13 +434,18 @@ def hat_guzergahi(hat_kodu, yon=None):
     ilk, son = secili.iloc[0], secili.iloc[-1]
     ara_duraklar = ", ".join(secili.iloc[1:-1]["DURAKADI"].tolist()[:10])
     fazla_var = "..." if len(secili) > 12 else ""
+    _harita_ayarla(
+        [float(ilk["enlem"]), float(ilk["boylam"])],
+        [
+            {"lat": float(ilk["enlem"]), "lon": float(ilk["boylam"]), "etiket": f"Kalkış: {ilk['DURAKADI']}", "tip": "durak"},
+            {"lat": float(son["enlem"]), "lon": float(son["boylam"]), "etiket": f"Varış: {son['DURAKADI']}", "tip": "durak"},
+        ],
+    )
     return (
         f"Hat {hat_kodu} ({'Gidiş' if yon == 'G' else 'Dönüş'} yönü): {len(secili)} durak. "
         f"Kalkış: {ilk['DURAKADI']} ({ilk['enlem']:.5f}, {ilk['boylam']:.5f}). "
         f"Varış: {son['DURAKADI']} ({son['enlem']:.5f}, {son['boylam']:.5f}). "
-        f"Aradaki bazı duraklar: {ara_duraklar}{fazla_var}. "
-        "Tam güzergahı haritada görmek için Verimlilik Gezgini sayfasındaki "
-        "'Güzergah Haritası' bölümünden bu hattı seçebilirsin."
+        f"Aradaki bazı duraklar: {ara_duraklar}{fazla_var}."
     )
 
 
@@ -447,6 +469,10 @@ def durak_ara(durak_adi):
     except Exception:
         pass  # erişilebilirlik detayı alınamazsa temel bilgiyle devam et
 
+    _harita_ayarla(
+        [float(ilk["enlem"]), float(ilk["boylam"])],
+        [{"lat": float(ilk["enlem"]), "lon": float(ilk["boylam"]), "etiket": ilk["DURAKADI"], "tip": "durak"}],
+    )
     return (
         f"'{durak_adi}' araması için {len(eslesenler)} durak bulundu. "
         f"İlk eşleşme: {ilk['DURAKADI']} (durak kodu: {ilk['DURAKKODU']}, "
@@ -514,6 +540,13 @@ def otobus_tahmini_varis(hat_kodu, durak_adi):
         f"{t['kapino']} (kapı no) -> ~{t['tahmini_dakika']:.0f} dakika (kalan {t['kalan_km']} km, anlık hız {t['anlik_hiz']} km/h)"
         for t in sonuc["tahminler"]
     ]
+
+    noktalar = [{"lat": sonuc["durak_lat"], "lon": sonuc["durak_lon"], "etiket": durak_ad_gercek, "tip": "durak"}]
+    for t in sonuc["tahminler"]:
+        if t.get("lat") is not None:
+            noktalar.append({"lat": t["lat"], "lon": t["lon"], "etiket": f"{t['kapino']} · ~{t['tahmini_dakika']:.0f} dk", "tip": "arac"})
+    _harita_ayarla([sonuc["durak_lat"], sonuc["durak_lon"]], noktalar)
+
     return (
         f"Hat {hat_kodu}, {durak_ad_gercek} durağına tahmini varışlar (KABA tahmin -- "
         "canlı konum ve hıza dayalı, trafik ışığı/bekleme hesaba katılmıyor):\n"
@@ -649,13 +682,16 @@ def soru_sor(mesaj, gecmis=None):
     cevaba atıflı sorular çalışsın diye. Maliyet kontrolü için çağıran taraf
     bunu son birkaç mesajla sınırlı tutmalı.
 
-    (cevap_metni, harita_hat_kodu) tuple'ı döndürür -- harita_hat_kodu, model bu
-    turda hat_guzergahi aracını çağırdıysa o hattın kodu (frontend'in isterse
-    haritayı otomatik o hatta odaklaması için), yoksa None.
+    (cevap_metni, harita) tuple'ı döndürür -- harita, bu turda konum içeren bir
+    araç (durak_ara, hat_guzergahi, arac_ara, otobus_tahmini_varis vb.) çağrıldıysa
+    {"merkez": [lat, lon], "noktalar": [...]} sözlüğü, yoksa None. SAYFA
+    DEĞİŞTİRMEK İÇİN DEĞİL -- frontend bunu cevabın içine küçük bir harita
+    gömmek için kullanabilir.
     """
+    global _SON_HARITA
+    _SON_HARITA = None
     client = istemci()
     mesajlar = list(gecmis or []) + [{"role": "user", "content": mesaj}]
-    harita_hat_kodu = None
 
     while True:
         response = client.messages.create(
@@ -673,7 +709,7 @@ def soru_sor(mesaj, gecmis=None):
                 sohbeti_kaydet(mesaj, cevap)
             except Exception:
                 pass  # kayıt başarısız olsa bile kullanıcı cevabı almaya devam etsin
-            return cevap, harita_hat_kodu
+            return cevap, _SON_HARITA
 
         # Model bir/birden fazla araç çağırmak istiyor -- hepsini çalıştırıp
         # sonuçları "tool_result" olarak modele geri gönderiyoruz.
@@ -681,8 +717,6 @@ def soru_sor(mesaj, gecmis=None):
         arac_sonuclari = []
         for blok in response.content:
             if blok.type == "tool_use":
-                if blok.name == "hat_guzergahi":
-                    harita_hat_kodu = blok.input.get("hat_kodu")
                 fonksiyon = ARAC_FONKSIYONLARI[blok.name]
                 sonuc = fonksiyon(**blok.input)
                 arac_sonuclari.append({

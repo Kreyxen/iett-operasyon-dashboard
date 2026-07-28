@@ -164,10 +164,16 @@ hat_secimi_planlanan = st.selectbox(
     key="hat_secimi_planlanan",
 )
 
+
+@st.cache_data(ttl=3600)
+def planlanan_sayisi_getir(hat_kodu, tarih):
+    return planlanan_sefer_sayisi(hat_kodu, tarih)
+
+
 if hat_secimi_planlanan:
     gercek_sefer_sayisi = len(df[df["SHATKODU"] == hat_secimi_planlanan])
     with st.spinner("Planlanan sefer saatleri çekiliyor..."):
-        planlanan_sayisi = planlanan_sefer_sayisi(hat_secimi_planlanan, secili_tarih)
+        planlanan_sayisi = planlanan_sayisi_getir(hat_secimi_planlanan, secili_tarih)
 
     col_p1, col_p2, col_p3 = st.columns(3)
     col_p1.metric("Gerçekleşen Sefer", gercek_sefer_sayisi)

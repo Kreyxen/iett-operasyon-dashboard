@@ -482,14 +482,16 @@
         planlanan TÜM sefer sayısını çekip, tablodaki gerçekleşen sefer sayısıyla karşılaştırıyoruz.
       </p>
       <div class="kpi-grid kpi-grid-2" style="padding:0 18px 18px;">
-        <div class="kart kpi">
+        <button type="button" class="kart kpi kpi-tiklanabilir" id="kpi-gercek-kutu">
           <div class="kpi-ust"><span class="kpi-etiket">Gerçekleşen Sefer</span><span class="kpi-ikon" style="background:#3987e522;color:#3987e5;">🚍</span></div>
           <span class="kpi-deger" id="kpi-gercek-sefer">—</span>
-        </div>
-        <div class="kart kpi">
+          <span class="kpi-alt">detay için tıkla ▾</span>
+        </button>
+        <button type="button" class="kart kpi kpi-tiklanabilir" id="kpi-planlanan-kutu">
           <div class="kpi-ust"><span class="kpi-etiket">Planlanan Sefer</span><span class="kpi-ikon" style="background:#199e7022;color:#199e70;">📋</span></div>
           <span class="kpi-deger" id="kpi-planlanan-sefer">—</span>
-        </div>
+          <span class="kpi-alt">detay için tıkla ▾</span>
+        </button>
       </div>
       <div class="oran-gosterge">
         <div class="oran-ust">
@@ -498,6 +500,10 @@
         </div>
         <div class="oran-bar-govde"><div class="oran-bar-dolu" id="oran-bar-dolu"></div></div>
       </div>
+      <div id="gercek-detay-panel" class="detay-panel gizli">
+        <div class="tablo-sarmalayici"><table id="gercek-detay-tablo"><thead></thead><tbody></tbody></table></div>
+      </div>
+      <div id="planlanan-detay-panel" class="detay-panel gizli"></div>
     </div>
   </section>
 
